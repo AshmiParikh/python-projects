@@ -58,7 +58,7 @@ class Particle(pygame.sprite.Sprite):
             self.theta = 2 * math.pi - self.theta
         self.rect.centerx += self.r * r_multiplier * math.cos(self.theta)
         self.rect.centery += self.r * r_multiplier * math.sin(self.theta)
-        
+       
     #Allows particle to change image.
     def change_image(self, new_image, width, length):
         self.image = pygame.image.load((new_image))
@@ -70,7 +70,7 @@ class Particle(pygame.sprite.Sprite):
         self.mol = new_name
     def change_name(self, new_name):
         self.name = new_name
-        
+       
     #Methods to get the attributes:
     def get_x(self):
         return self.rect.centerx
@@ -78,7 +78,7 @@ class Particle(pygame.sprite.Sprite):
         return self.rect.centerx
     def get_name(self):
         return self.name
-    
+   
     #Change speed of particles
     def stop_moving(self):
         self.r = 0
@@ -94,8 +94,10 @@ carb_count = 0
 protein_count = 0
 DNA_count = 0
 total_count = 0
-screens = 0        
-        
+life_count=0
+screens = 0
+
+       
 #Create all Sprite Groups:
 # Create Carbon group:
 carbon_particles = pygame.sprite.Group()
@@ -117,7 +119,7 @@ list_oxygen_particles = [Particle("Oxygen.png", "O") for i in range(15)]
 
 for particle in list_oxygen_particles:
     oxygen_particles.add(particle)
-    
+   
 #Create Nitrogen Group:
 nitrogen_particles = pygame.sprite.Group()
 list_nitrogen_particles = [Particle("Nitrogen.png", "N") for i in range(15)]
@@ -179,7 +181,7 @@ def init_collision():
                     scanned_particles.append(particle_2)
                     particle_1.update(1)
                     particle_2.update(1)
-                    
+                   
 #detecting secondary collisions (carbohydrate)
 def detect_carb():
     init_collision()
@@ -222,14 +224,14 @@ def detect_carb():
                     scanned_particles.append(particle_2)
                     particle_1.update(1)
                     particle_2.update(1)
-                    
-#Detect tertiary collisions (Proteins) 
+                   
+#Detect tertiary collisions (Proteins)
 def detect_protein():
     detect_carb()
     global total_count
     global protein_count
     scanned_particles = []
-    
+   
     for particle_1 in list_all_particles:
         scanned_particles.append(particle_1)
         for particle_2 in list_all_particles:
@@ -252,14 +254,14 @@ def detect_protein():
                     scanned_particles.append(particle_2)
                     particle_1.update(1)
                     particle_2.update(1)
-                    
+                   
 #Detect last collision (DNA) & then stop simulator
 def detect_DNA():
     detect_protein()
     global total_count
     global DNA_count
     scanned_particles = []
-    
+   
     for particle_1 in list_all_particles:
         scanned_particles.append(particle_1)
         for particle_2 in list_all_particles:
@@ -282,9 +284,39 @@ def detect_DNA():
                     scanned_particles.append(particle_2)
                     particle_1.update(1)
                     particle_2.update(1)
-  
+   
+
+def detect_life():
+    detect_DNA()
+    global total_count
+    global life_count
+    scanned_particles = []
+   
+    for particle_1 in list_all_particles:
+        scanned_particles.append(particle_1)
+        for particle_2 in list_all_particles:
+            if particle_2 in scanned_particles:
+                continue
+            if particle_1.rect.colliderect(particle_2.rect):
+                particle_1_name=particle_1.get_name()
+                particle_2_name = particle_2.get_name()
+               
+                if (particle_1_name == "CHONP" and particle_2_name == "CHON") or (particle_1_name == "CHON" and particle_2_name == 'CHONP'):
+                    particle_1.change_image("life.png",120,70)
+                    particle_1.change_name("LIFE")
+                    particle_1.change_mol("LIFE")
+                    total_count +=1
+                    life_count +=1
+                    particle_2.kill()
+                else:
+                    particle_1.theta, particle_2.theta = particle_2.theta, particle_1.theta
+                    particle_1.r, particle_2.r = particle_2.r, particle_1.r
+                    scanned_particles.append(particle_2)
+                    particle_1.update(1)
+                    particle_2.update(1)
  
-end_game = False   
+ 
+end_game = False  
 
 
 # Main loop
@@ -298,32 +330,37 @@ while True:
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
-            
+           
     #Adding Text and Counting Collisions:
 
     #Carbohydrate Collisions:
     carb_fontObj = pygame.font.Font('freesansbold.ttf', 32)
-    carb_SurfaceObj = carb_fontObj.render("carbs:" + str(carb_count), True, (0,0,0), (255,255,255))
+    carb_SurfaceObj = carb_fontObj.render("carbs: " + str(carb_count), True, (0,0,0), (255,255,255))
     carb_RectObj = carb_SurfaceObj.get_rect()
-    carb_RectObj.center = (200, 500)     
+    carb_RectObj.center = (200, 500)    
     #Protein Collisions:
     protein_fontObj = pygame.font.Font('freesansbold.ttf', 32)
-    protein_SurfaceObj = protein_fontObj.render("Proteins:" + str(protein_count), True, (0,0,0), (255,255,255))
+    protein_SurfaceObj = protein_fontObj.render("Proteins: " + str(protein_count), True, (0,0,0), (255,255,255))
     protein_RectObj = protein_SurfaceObj.get_rect()
     protein_RectObj.center = (200, 400)    
     #DNA Collisions:
     DNA_fontObj = pygame.font.Font('freesansbold.ttf', 32)
-    DNA_SurfaceObj = DNA_fontObj.render("DNA:" + str(DNA_count), True, (0,0,0), (255,255,255))
+    DNA_SurfaceObj = DNA_fontObj.render("DNA: " + str(DNA_count), True, (0,0,0), (255,255,255))
     DNA_RectObj =DNA_SurfaceObj.get_rect()
-    DNA_RectObj.center = (200, 300)    
+    DNA_RectObj.center = (200, 300)
+    #life collissions
+    life_fontObj = pygame.font.Font('freesansbold.ttf', 32)
+    life_SurfaceObj = life_fontObj.render('Count of living organisms: '+ str(life_count), True, (0,0,0), (255,255,255))
+    life_RectObj = life_SurfaceObj.get_rect()
+    life_RectObj.center = (800,100)
     #Total Collisions:
     total_fontObj = pygame.font.Font('freesansbold.ttf', 32)
-    total_SurfaceObj = total_fontObj.render("Total:" + str(total_count), True, (0,0,0), (255,255,255))
+    total_SurfaceObj = total_fontObj.render("Total: " + str(total_count), True, (0,0,0), (255,255,255))
     total_RectObj = total_SurfaceObj.get_rect()
-    total_RectObj.center = (200, 200) 
-    #Time it took: 
+    total_RectObj.center = (200, 200)
+    #Time it took:
     screens_fontObj = pygame.font.Font('freesansbold.ttf', 32)
-    screens_SurfaceObj = screens_fontObj.render("Screens:" + str(screens), True, (0,0,0), (255,255,255))
+    screens_SurfaceObj = screens_fontObj.render("Millions of years: " + str(screens*7), True, (0,0,0), (255,255,255))
     screens_RectObj = screens_SurfaceObj.get_rect()
     screens_RectObj.center = (200, 100)
     if end_game == True:
@@ -332,9 +369,10 @@ while True:
         screen.blit(DNA_SurfaceObj, DNA_RectObj)
         screen.blit(total_SurfaceObj, total_RectObj)
         screen.blit(screens_SurfaceObj, screens_RectObj)
-        
+        screen.blit(life_SurfaceObj, life_RectObj)
+       
     #Calling Detection function:
-    detect_DNA()
+    detect_life()
                
                
     # using the update method in particle class to move objects
@@ -367,7 +405,7 @@ while True:
             particle.stop_moving()
     elif key[pygame.K_BACKSPACE]:
         for particle in list_all_particles:
-            particle.start_moving() 
+            particle.start_moving()
     elif key[pygame.K_ESCAPE]:
         for particle in list_all_particles:
             particle.kill()
